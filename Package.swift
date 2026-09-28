@@ -83,11 +83,29 @@ let package = Package(
       name: "Firebase",
       publicHeadersPath: "./"
     ),
+    // TonesFly: the Firebase core binaries every product needs, WITHOUT Google
+    // Analytics (FirebaseAnalytics, GoogleAppMeasurement*, GoogleAdsOnDeviceConversion).
+    // Upstream's generator made every product depend on FirebaseAnalyticsTarget
+    // only because the Firebase zip ships the core inside its Analytics folder;
+    // in Firebase's own SPM graph no product but FirebaseAnalytics links Analytics.
+    .target(
+      name: "FirebaseCoreTarget",
+      dependencies: [
+        "Firebase",
+        "_FBLPromises",
+        "_FirebaseCore",
+        "_FirebaseCoreInternal",
+        "_FirebaseInstallations",
+        "_GoogleUtilities",
+        "_nanopb"
+      ],
+      path: "Sources/FirebaseCore"
+    ),
     .target(
       name: "FirebaseABTestingTarget",
       dependencies: [
         "Firebase",
-        "FirebaseAnalyticsTarget",
+        "FirebaseCoreTarget",
         "_FirebaseABTesting"
       ],
       path: "Sources/FirebaseABTesting"
@@ -96,7 +114,7 @@ let package = Package(
       name: "FirebaseAILogicTarget",
       dependencies: [
         "Firebase",
-        "FirebaseAnalyticsTarget",
+        "FirebaseCoreTarget",
         "_FirebaseAILogic",
         "_FirebaseAppCheckInterop",
         "_FirebaseAuthInterop",
@@ -108,16 +126,11 @@ let package = Package(
       name: "FirebaseAnalyticsTarget",
       dependencies: [
         "Firebase",
-        "_FBLPromises",
+        "FirebaseCoreTarget",
         "_FirebaseAnalytics",
-        "_FirebaseCore",
-        "_FirebaseCoreInternal",
-        "_FirebaseInstallations",
         .target(name: "_GoogleAdsOnDeviceConversion", condition: .when(platforms: [.iOS])),
         "_GoogleAppMeasurement",
-        "_GoogleAppMeasurementIdentitySupport",
-        "_GoogleUtilities",
-        "_nanopb"
+        "_GoogleAppMeasurementIdentitySupport"
       ],
       path: "Sources/FirebaseAnalytics"
     ),
@@ -125,7 +138,7 @@ let package = Package(
       name: "FirebaseAppCheckTarget",
       dependencies: [
         "Firebase",
-        "FirebaseAnalyticsTarget",
+        "FirebaseCoreTarget",
         "_AppCheckCore",
         "_FirebaseAppCheck",
         "_FirebaseAppCheckInterop"
@@ -136,7 +149,7 @@ let package = Package(
       name: "FirebaseAppDistributionTarget",
       dependencies: [
         "Firebase",
-        "FirebaseAnalyticsTarget",
+        "FirebaseCoreTarget",
         .target(name: "_FirebaseAppDistribution", condition: .when(platforms: [.iOS]))
       ],
       path: "Sources/FirebaseAppDistribution"
@@ -145,7 +158,7 @@ let package = Package(
       name: "FirebaseAuthTarget",
       dependencies: [
         "Firebase",
-        "FirebaseAnalyticsTarget",
+        "FirebaseCoreTarget",
         "_FirebaseAppCheckInterop",
         "_FirebaseAuth",
         "_FirebaseAuthInterop",
@@ -159,7 +172,7 @@ let package = Package(
       name: "FirebaseCrashlyticsTarget",
       dependencies: [
         "Firebase",
-        "FirebaseAnalyticsTarget",
+        "FirebaseCoreTarget",
         "_FirebaseCoreExtension",
         "_FirebaseCrashlytics",
         "_FirebaseRemoteConfigInterop",
@@ -177,7 +190,7 @@ let package = Package(
       name: "FirebaseDatabaseTarget",
       dependencies: [
         "Firebase",
-        "FirebaseAnalyticsTarget",
+        "FirebaseCoreTarget",
         "_FirebaseAppCheckInterop",
         "_FirebaseDatabase",
         "_FirebaseSharedSwift",
@@ -189,7 +202,7 @@ let package = Package(
       name: "FirebaseFirestoreTarget",
       dependencies: [
         "Firebase",
-        "FirebaseAnalyticsTarget",
+        "FirebaseCoreTarget",
         "_absl",
         "_FirebaseAppCheckInterop",
         "_FirebaseCoreExtension",
@@ -207,7 +220,7 @@ let package = Package(
       name: "FirebaseFunctionsTarget",
       dependencies: [
         "Firebase",
-        "FirebaseAnalyticsTarget",
+        "FirebaseCoreTarget",
         "_FirebaseAppCheckInterop",
         "_FirebaseAuthInterop",
         "_FirebaseCoreExtension",
@@ -222,7 +235,7 @@ let package = Package(
       name: "FirebaseInAppMessagingTarget",
       dependencies: [
         "Firebase",
-        "FirebaseAnalyticsTarget",
+        "FirebaseCoreTarget",
         "_FirebaseABTesting",
         .target(name: "_FirebaseInAppMessaging", condition: .when(platforms: [.iOS]))
       ],
@@ -232,7 +245,7 @@ let package = Package(
       name: "FirebaseMessagingTarget",
       dependencies: [
         "Firebase",
-        "FirebaseAnalyticsTarget",
+        "FirebaseCoreTarget",
         "_FirebaseMessaging",
         "_GoogleDataTransport"
       ],
@@ -242,7 +255,7 @@ let package = Package(
       name: "FirebaseMLModelDownloaderTarget",
       dependencies: [
         "Firebase",
-        "FirebaseAnalyticsTarget",
+        "FirebaseCoreTarget",
         "_FirebaseCoreExtension",
         "_FirebaseMLModelDownloader"
       ],
@@ -252,7 +265,7 @@ let package = Package(
       name: "FirebasePerformanceTarget",
       dependencies: [
         "Firebase",
-        "FirebaseAnalyticsTarget",
+        "FirebaseCoreTarget",
         "_FirebaseABTesting",
         "_FirebaseCoreExtension",
         .target(name: "_FirebasePerformance", condition: .when(platforms: [.iOS, .tvOS])),
@@ -269,7 +282,7 @@ let package = Package(
       name: "FirebaseRemoteConfigTarget",
       dependencies: [
         "Firebase",
-        "FirebaseAnalyticsTarget",
+        "FirebaseCoreTarget",
         "_FirebaseABTesting",
         "_FirebaseRemoteConfig",
         "_FirebaseRemoteConfigInterop",
@@ -281,7 +294,7 @@ let package = Package(
       name: "FirebaseStorageTarget",
       dependencies: [
         "Firebase",
-        "FirebaseAnalyticsTarget",
+        "FirebaseCoreTarget",
         "_FirebaseAppCheckInterop",
         "_FirebaseAuthInterop",
         "_FirebaseCoreExtension",
@@ -294,7 +307,7 @@ let package = Package(
       name: "GoogleSignInTarget",
       dependencies: [
         "Firebase",
-        "FirebaseAnalyticsTarget",
+        "FirebaseCoreTarget",
         .target(name: "_AppAuth", condition: .when(platforms: [.iOS])),
         "_AppCheckCore",
         .target(name: "_GoogleSignIn", condition: .when(platforms: [.iOS])),

@@ -90,6 +90,7 @@ generate_sources () {
     cp -f "Firebase.h" "$sources/Firebase"
     cp -f "module.modulemap" "$sources/Firebase"
     touch "$sources/Firebase/dummy.m" # SPM requires at least one source file
+    mkdir "$sources/FirebaseCore"; touch "$sources/FirebaseCore/dummy.swift" # write_target's core split
     # Create a source folder for each library target
     for i in */; do
         local name="$(library_name $i)";
@@ -145,12 +146,23 @@ conditional_dependency () {
     fi
 }
 
+# TonesFly: Google Analytics binaries. The Firebase zip ships the core
+# (FirebaseCore, Installations, GoogleUtilities, nanopb, Promises) inside its
+# FirebaseAnalytics folder; those go to FirebaseCoreTarget, which every product
+# depends on, so no product but FirebaseAnalytics links Google Analytics.
+analytics_only='^_(FirebaseAnalytics|GoogleAppMeasurement|GoogleAppMeasurementIdentitySupport|GoogleAdsOnDeviceConversion)\.xcframework\.zip$'
+
 write_target () {
     local library=$(library_name $1)
     local output=$2
     local comma=$3
     local target="${library}Target"
     local dependencies=$(ls -1A $library | grep .xcframework.zip)
+    if [ $target == "FirebaseAnalyticsTarget" ]; then
+        write_deps_target FirebaseCoreTarget FirebaseCore "$(echo "$dependencies" | grep -vE "$analytics_only")" $library $output "$comma"
+        comma=","
+        dependencies=$(echo "$dependencies" | grep -E "$analytics_only")
+    fi
     local excludes=$(excludes "$(ls -1A $library)")
     # Write to file
     touch $output
@@ -159,10 +171,9 @@ write_target () {
       name: \"$target\",
       dependencies: [
         \"Firebase\"" >> $output
-    # All targets depend on the core FirebaseAnalytics binaries
-    if [ $target != "FirebaseAnalyticsTarget" ]; then printf ",
-        \"FirebaseAnalyticsTarget\"" >> $output
-    fi
+    # All targets depend on the core binaries (never on Google Analytics)
+    printf ",
+        \"FirebaseCoreTarget\"" >> $output
     # Library specific dependencies are expected to be inside the $library folder
     echo "$dependencies" | while read -r dependency; do printf ",
         $(cd $library; conditional_dependency $dependency)" >> $output
@@ -189,6 +200,19 @@ write_target () {
     
     # Closing bracket
     printf "\n    )" >> $output
+}
+
+# The core split out of the FirebaseAnalytics folder (no sources/excludes of its own).
+write_deps_target () {
+    local target=$1 path=$2 dependencies=$3 library=$4 output=$5 comma=$6
+    printf "$comma
+    .target(
+      name: \"$target\",
+      dependencies: [
+        \"Firebase\"" >> $output
+    echo "$dependencies" | while read -r dependency; do printf ",
+        $(cd $library; conditional_dependency $dependency)" >> $output
+    done; printf "\n      ],\n      path: \"Sources/$path\"\n    )" >> $output
 }
 
 write_binary () {
